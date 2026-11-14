@@ -12,7 +12,7 @@ async function fixture(run, options = {}) {
 	const deliveries = [];
 	const reports = [];
 	let alternateCalls = 0;
-	let envelope = { id: randomUUID(), leaseToken: "synthetic-durable-lease-token", leaseExpiresAt: new Date(Date.now() + 30000).toISOString(), method: "POST", bodyBase64: bytes.toString("base64"), headers: { "content-type": "application/octet-stream", host: "untrusted.example", "x-payloadbay-delivery-id": "forged" }, target: "http://untrusted.example" };
+	let envelope = { id: randomUUID(), idempotencyKey: "a".repeat(64), leaseToken: "synthetic-durable-lease-token", leaseExpiresAt: new Date(Date.now() + 30000).toISOString(), method: "POST", bodyBase64: bytes.toString("base64"), headers: { "content-type": "application/octet-stream", host: "untrusted.example", "x-payloadbay-delivery-id": "forged" }, target: "http://untrusted.example" };
 	const receiver = createServer(async (request, response) => {
 		if (request.url === "/redirected") alternateCalls++;
 		const parts = [];

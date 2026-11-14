@@ -6,12 +6,14 @@ an outbound authenticated connection.
 
 Tracking: [Core #18](https://github.com/payloadbay/payloadbay/issues/18).
 
-**Protocol prototype, not released or Core-compatible yet.** Core does not yet
-implement the claim/complete API. Tests use an explicit local protocol fixture.
-Do not point this prototype at production or treat it as an ngrok replacement.
+**Unreleased development agent.** The matching Core transport lives on the
+`feat/18-runner-transport` branch and has passed a real Next.js/agent/private
+receiver check. It is not in a published Core release. Do not point this
+prototype at production or treat it as a general ngrok reverse proxy.
 
 Node 22.23.5 or newer is required. Run checks with `bun run test`.
-No external dependency or install token is required.
+No runtime dependency or install token is required. Run `bun install` to
+install the development-only push hook; `bun run check` matches its checks.
 
 Set `PAYLOADBAY_URL` to the server HTTPS origin, `PAYLOADBAY_RUNNER_TARGET` to the
 operator-approved local HTTP(S) URL and `PAYLOADBAY_RUNNER_TOKEN` in your secret
@@ -21,8 +23,9 @@ Plain HTTP server connections are allowed only on loopback for development.
 
 The proposed protocol has `POST /api/v1/runner/claim` return 204 when idle or a
 bounded JSON delivery with `id`, `leaseToken`, `leaseExpiresAt`, `method`, `headers`
-and `bodyBase64`. `POST /api/v1/runner/deliveries/:id/complete` reports the lease
-and a bounded response or network failure. Neither endpoint exists in Core yet.
+and `bodyBase64`, plus a stable `idempotencyKey` shared across retries of the
+same logical send. `POST /api/v1/runner/deliveries/:id/complete` reports the lease
+and a bounded response or network failure. Both endpoints require the matching unreleased Core transport.
 The future server must enforce a revocable destination-scoped credential, durable
 leases, immutable identity, expiry/fencing, backpressure and retained attempts.
 Customer access must remain within the organization boundary.

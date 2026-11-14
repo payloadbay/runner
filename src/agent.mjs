@@ -39,6 +39,7 @@ async function boundedBody(response, maximum, signal) {
 function deliveryEnvelope(input) {
 	if (!input || typeof input !== "object" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.id ?? "") || typeof input.leaseToken !== "string" || input.leaseToken.length < 16 || input.leaseToken.length > 4096) throw Error("invalid_delivery");
 	if (!methods.has(input.method) || typeof input.bodyBase64 !== "string" || input.bodyBase64.length > Math.ceil(maximumBody / 3) * 4 || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(input.bodyBase64)) throw Error("invalid_request");
+	if (!/^[a-f0-9]{64}$/.test(input.idempotencyKey ?? "")) throw Error("invalid_idempotency_key");
 	const body = Buffer.from(input.bodyBase64, "base64");
 	if (body.length > maximumBody || (["GET", "HEAD"].includes(input.method) && body.length)) throw Error("invalid_body");
 	if (!input.headers || typeof input.headers !== "object" || Array.isArray(input.headers)) throw Error("invalid_headers");
@@ -50,7 +51,7 @@ function deliveryEnvelope(input) {
 		if (headerBytes > 16384) throw Error("headers_too_large");
 		if (!forbiddenHeaders.has(name.toLowerCase())) headers.set(name, value);
 	}
-	headers.set("x-payloadbay-delivery-id", input.id);
+	headers.set("x-payloadbay-delivery-id", input.idempotencyKey);
 	const remaining = Date.parse(input.leaseExpiresAt) - Date.now();
 	if (!Number.isFinite(remaining) || remaining < 1000) throw Error("lease_expired");
 
@@ -69,7 +70,7 @@ export async function runOnce(config, signal = new AbortController().signal) {
 	try {
 		const response = await fetch(config.target, { method: delivery.method, headers: delivery.headers, ...(delivery.body.length ? { body: delivery.body } : {}), redirect: "manual", signal: localSignal });
 		const body = await boundedBody(response, 65536, localSignal);
-		result = { status: response.status, bodyBase64: body.toString("base64"), contentType: response.headers.get("content-type") ?? "" };
+		result = { status: response.status, bodyBase64: body.toString("base64"), contentType: (response.headers.get("content-type") ?? "").slice(0, 1024) };
 	} catch {
 		if (signal.aborted) throw Error("cancelled");
 		result = { networkError: "local_delivery_failed" };
