@@ -26,8 +26,8 @@ bounded JSON delivery with `id`, `leaseToken`, `leaseExpiresAt`, `method`, `head
 and `bodyBase64`, plus a stable `idempotencyKey` shared across retries of the
 same logical send. `POST /api/v1/runner/deliveries/:id/complete` reports the lease
 and a bounded response or network failure. Both endpoints require the matching unreleased Core transport.
-The future server must enforce a revocable destination-scoped credential, durable
-leases, immutable identity, expiry/fencing, backpressure and retained attempts.
+The matching Core draft enforces revocable destination-scoped credentials, durable
+leases, expiry/fencing, destination backpressure and retained attempts.
 Customer access must remain within the organization boundary.
 
 The Runner forwards original bytes to its fixed target, does not follow local
